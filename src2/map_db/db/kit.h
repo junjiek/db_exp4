@@ -1,13 +1,9 @@
-#ifndef MAP_SEARCH_DB_KIT_H_
-#define MAP_SEARCH_DB_KIT_H_
-
-#include <vector>
+#ifndef _KIT_H_
+#define _KIT_H_
 
 #include "poi.h"
 
-
-namespace map_search {
-namespace db {
+#include <vector>
 
 // Read POIs from file in json format.
 bool ReadJson(char* file_name);
@@ -15,7 +11,4 @@ bool ReadJson(char* file_name);
 std::vector<POI> Search(double lat, double lng, const std::string& input,
                         unsigned num);
 
-}  // namespace db
-}  // namespace map_search
-
-#endif  // MAP_SEARCH_DB_KIT_H_
+#endif  // _KIT_H_

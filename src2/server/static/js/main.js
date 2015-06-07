@@ -1,6 +1,5 @@
 $(document).ready(function() {
     var map;
-    var z_marker;
     var markers = [];
 
     var init_latlng = new google.maps.LatLng(1.352083, 103.81983600000001);

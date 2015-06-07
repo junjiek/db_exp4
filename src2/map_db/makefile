@@ -50,3 +50,7 @@ info:
 	@echo "CPP_SOURCES: $(CPP_SOURCES)"
 	@echo "CPP_OBJS: $(CPP_OBJS)"
 	@echo "CPP_FPIC_OBJS: $(CPP_FPIC_OBJS)"
+
+clean:
+	rm -rf build/ py_build/
+
