@@ -12,8 +12,24 @@ $(document).ready(function() {
     map = new google.maps.Map(document.getElementById('map_canvas'),
                               mapOptions);
 
+    var directionsService = new google.maps.DirectionsService();
+    var directionsDisplay = new google.maps.DirectionsRenderer();
+
     document.getElementById('num').value = "5";
     document.getElementById('search_bar').value = "";
+
+    center_marker = new google.maps.Marker({
+        position: init_latlng,
+        map: map,
+        draggable: true,
+        animation: google.maps.Animation.DROP,
+        icon: "http://maps.google.com/mapfiles/kml/paddle/G.png",
+    });
+
+    google.maps.event.addListener(center_marker, 'dragend', function() {
+        showSearch(true);
+        map.panTo(center_marker.getPosition());
+    });
 
     function deleteMarkers() {
         for (var i = 0; i < markers.length; ++i) {
@@ -23,12 +39,38 @@ $(document).ready(function() {
     }
 
     function addMarker(lat, lng) {
-        markers.push(new google.maps.Marker({
-                     position: new google.maps.LatLng(lat, lng),
-                     map: map
-        }));
+        marker = new google.maps.Marker({
+                        position: new google.maps.LatLng(lat, lng),
+                        map: map
+                    })
+        markers.push(marker);
+        google.maps.event.addListener(marker, 'click', function() {
+            calcRoute(center_marker.getPosition(), marker.getPosition());
+        });
+        // map.panTo(new google.maps.LatLng(lat, lng));
     }
-    var genResults = function(time, pois) {
+
+    function calcRoute(latlng1, latlng2) {
+        directionsDisplay.setMap(map);
+        var pos1 = new google.maps.LatLng(latlng1.lat(), latlng1.lng());
+        var pos2 = new google.maps.LatLng(latlng2.lat(), latlng2.lng());
+        var request = {
+            origin: pos1,
+            destination: pos2,
+            // Note that Javascript allows us to access the constant
+            // using square brackets and a string value as its
+            // "property."
+            travelMode: google.maps.TravelMode.DRIVING
+        };
+        directionsService.route(request, function(response, status) {
+            if (status == google.maps.DirectionsStatus.OK) {
+                directionsDisplay.setDirections(response);
+            }
+        });
+
+    }
+
+    function genResults(time, pois) {
         var ret = "";
         ret += '<div id="time_show">' + 
                'Total ' + pois.length + ' results (' + parseFloat(time).toFixed(6) + ' seconds)' + 
@@ -49,6 +91,9 @@ $(document).ready(function() {
             var id = $(this).attr("id").substr(12);
             id = parseInt(id);
             markers[id].setAnimation(google.maps.Animation.DROP);
+            map.panTo(markers[id].getPosition());
+            // if (center_marker != null)
+            //     calcRoute(center_marker.getPosition(), markers[id].getPosition());
         });
     };
 
@@ -84,7 +129,7 @@ $(document).ready(function() {
 
                 var pois = eval("("+xmlhttp.responseText.substr(split+1)+")");
                 
-                if (pan && pois.length > 0) {
+                if (center_marker == null && pan && pois.length > 0) {
                     var lat = pois[0][1];
                     var lng = pois[0][2];
                     map.panTo(new google.maps.LatLng(lat, lng));
@@ -93,18 +138,27 @@ $(document).ready(function() {
 
             }
         }
+        var origin = (center_marker == null) ?  map.getCenter() : center_marker.getPosition();
+        // var origin = map.getCenter()
         url = '/search?';
         url += 'q=' + str;
         url += '&num=' + num;
-        url += '&lat=' + map.getCenter().lat();
-        url += '&lng=' + map.getCenter().lng();
+        url += '&lat=' + origin.lat();
+        url += '&lng=' + origin.lng();
         xmlhttp.open("GET", url, true);
         xmlhttp.send();
     }
+    function clear() {
+        document.getElementById('search_bar').value = "";
+        directionsDisplay.setMap(null);
+        deleteMarkers();
+        document.getElementById("result").innerHTML="";
+    }
+
+    $('#clearButton').on("click", function() { clear(); });
     $("#search_bar").on("input", function() { showSearch(true); });
     $("#num").on("input", function() { showSearch(true); });
     google.maps.event.addListener(map, 'dragend', function() { showSearch(false); });
     google.maps.event.addListener(map, 'zoom_changed', function() { showSearch(false); });
-
 
 });

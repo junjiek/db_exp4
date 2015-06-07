@@ -30,6 +30,15 @@ html, body
     margin: 8px 0px 0px 40px;
 }
 
+#clearButton
+{
+    width: 5%;
+    height: 100%;
+    margin-top: 0.5cm;
+    margin-left: 0.5cm;
+
+}
+
 #search_bar
 {
     width: 40%;
