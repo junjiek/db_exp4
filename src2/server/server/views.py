@@ -20,7 +20,8 @@ def main(request):
 
 def search(request):
     t0 = time.clock()
-    pois = db.search(float(request.GET['lat']), float(request.GET['lng']),
-                     request.GET['q'], int(request.GET['num']))
+    pois = db.search(int(request.GET['num']), float(request.GET['xmin']),
+                     float(request.GET['ymin']), float(request.GET['xmax']),
+                     float(request.GET['ymax']))
     t1 = time.clock()
     return HttpResponse(str(t1-t0) + ';' + str(pois))

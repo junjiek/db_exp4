@@ -4,7 +4,7 @@ PY_BUILD_PATH = py_build
 CC = g++
 INCLUDES = -I include
 LIBS =
-CFLAGS = -Wall -Werror -g
+CFLAGS = -g
 LINKFLAGS =
 
 

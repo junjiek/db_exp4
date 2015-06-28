@@ -12,24 +12,51 @@ $(document).ready(function() {
     map = new google.maps.Map(document.getElementById('map_canvas'),
                               mapOptions);
 
-    var directionsService = new google.maps.DirectionsService();
-    var directionsDisplay = new google.maps.DirectionsRenderer();
+    var rectangle = new google.maps.Rectangle();
+    var rectOptions = {
+                        strokeColor: '#FF0000',
+                        strokeOpacity: 0.8,
+                        strokeWeight: 2,
+                        fillColor: '#FF0000',
+                        fillOpacity: 0.35,
+                        map: map,
+                        bounds: null
+    };
+    rectangle.setOptions(rectOptions);
+    rectangle.setVisible(true);
+    var editing = false;
+    function setPoint(p1, p2) {
+        var x = new google.maps.LatLng(p1.lat() < p2.lat() ? p1.lat() : p2.lat(),
+                                       p1.lng() < p2.lng() ? p1.lng() : p2.lng());
+        var y = new google.maps.LatLng(p1.lat() > p2.lat() ? p1.lat() : p2.lat(),
+                                       p1.lng() > p2.lng() ? p1.lng() : p2.lng());
+        rectangle.setBounds(new google.maps.LatLngBounds(x, y));
+    }
+    function clk(e) {
+        console.log(e);
+        if (editing) {
+            editing = false;
+            pt2 = e.latLng;
+            setPoint(pt1, pt2);
+            showSearch();
+        } else {
+            editing = true;
+            pt1 = pt2 = e.latLng;
+            setPoint(pt1, pt2);
+        }
+    };
+    function move(e) {
+        if (editing) {
+            pt2 = e.latLng;
+            setPoint(pt1, pt2);
+        }
+    }
+    google.maps.event.addListener(map, 'click', clk);
+    google.maps.event.addListener(rectangle, 'click', clk);
+    google.maps.event.addListener(map, 'mousemove', move);
+    google.maps.event.addListener(rectangle, 'mousemove', move);
 
-    document.getElementById('num').value = "5";
-    document.getElementById('search_bar').value = "";
-
-    center_marker = new google.maps.Marker({
-        position: init_latlng,
-        map: map,
-        draggable: true,
-        animation: google.maps.Animation.DROP,
-        icon: "http://maps.google.com/mapfiles/kml/paddle/G.png",
-    });
-
-    google.maps.event.addListener(center_marker, 'dragend', function() {
-        showSearch(true);
-        map.panTo(center_marker.getPosition());
-    });
+    document.getElementById('num').value = "10";
 
     function deleteMarkers() {
         for (var i = 0; i < markers.length; ++i) {
@@ -47,67 +74,35 @@ $(document).ready(function() {
         google.maps.event.addListener(marker, 'click', function() {
             calcRoute(center_marker.getPosition(), marker.getPosition());
         });
-        // map.panTo(new google.maps.LatLng(lat, lng));
     }
 
-    function calcRoute(latlng1, latlng2) {
-        directionsDisplay.setMap(map);
-        var pos1 = new google.maps.LatLng(latlng1.lat(), latlng1.lng());
-        var pos2 = new google.maps.LatLng(latlng2.lat(), latlng2.lng());
-        var request = {
-            origin: pos1,
-            destination: pos2,
-            // Note that Javascript allows us to access the constant
-            // using square brackets and a string value as its
-            // "property."
-            travelMode: google.maps.TravelMode.DRIVING
-        };
-        directionsService.route(request, function(response, status) {
-            if (status == google.maps.DirectionsStatus.OK) {
-                directionsDisplay.setDirections(response);
-            }
-        });
-
-    }
-
-    function genResults(time, pois) {
+    function genResults(time, tags) {
         var ret = "";
         ret += '<div id="time_show">' + 
-               'Total ' + pois.length + ' results (' + parseFloat(time).toFixed(6) + ' seconds)' + 
+                tags.length + ' tags found in ' + parseFloat(time).toFixed(6) + ' seconds.' + 
                '</div>';
 
-        for (var i = 0; i < pois.length; ++i) {
-            var loc = pois[i];
+        for (var i = 0; i < tags.length; ++i) {
+            var loc = tags[i];
             ret += '<div class="result_item" id="result_item_' + i + '">';
             ret += '<span class="name">'+ loc[0] + '</span><br>';
-            ret += '<span class="latlng">' + loc[1] + ", " + loc[2] + '</span><br>';
-            ret += '<span class="addr">' + loc[3] + '</span>';
+            ret += '<span class="count"> count: ' + loc[1]+ '</span>';
             ret += '</div>';
-            addMarker(loc[1], loc[2]);
         }
         document.getElementById("result").innerHTML = ret;
-
-        $(".result_item").click(function() {
-            var id = $(this).attr("id").substr(12);
-            id = parseInt(id);
-            markers[id].setAnimation(google.maps.Animation.DROP);
-            map.panTo(markers[id].getPosition());
-            // if (center_marker != null)
-            //     calcRoute(center_marker.getPosition(), markers[id].getPosition());
-        });
     };
 
-    function showSearch(pan) {
+    function showSearch() {
+
         deleteMarkers();
         var num = parseInt(document.getElementById('num').value);
         if (isNaN(num)) {
+            document.getElementById("result").innerHTML="";
             return;
         }
         document.getElementById('num').value = num;
-        var str = document.getElementById('search_bar').value;
-
         var xmlhttp;
-        if (str.length == 0) {
+        if (rectangle.getBounds() == null) {
             document.getElementById("result").innerHTML="";
             return;
         }
@@ -120,45 +115,35 @@ $(document).ready(function() {
         }
         xmlhttp.onreadystatechange = function() {
             if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-                // order: name, lat, lng, addr
+                console.log(xmlhttp.responseText);
                 var split = xmlhttp.responseText.indexOf(';');
                 var time = '';
                 if (split > 0) {
                     time = xmlhttp.responseText.substr(0, split);
                 }
 
-                var pois = eval("("+xmlhttp.responseText.substr(split+1)+")");
-                
-                if (center_marker == null && pan && pois.length > 0) {
-                    var lat = pois[0][1];
-                    var lng = pois[0][2];
-                    map.panTo(new google.maps.LatLng(lat, lng));
-                }
-                genResults(time, pois);
+                var tags = eval("("+xmlhttp.responseText.substr(split+1)+")");
+                genResults(time, tags);
 
             }
         }
-        var origin = (center_marker == null) ?  map.getCenter() : center_marker.getPosition();
-        // var origin = map.getCenter()
+        var bound = rectangle.getBounds();
         url = '/search?';
-        url += 'q=' + str;
-        url += '&num=' + num;
-        url += '&lat=' + origin.lat();
-        url += '&lng=' + origin.lng();
+        url += 'num=' + num;
+        url += '&xmin=' + bound.getSouthWest().lat();
+        url += '&ymin=' + bound.getSouthWest().lng();
+        url += '&xmax=' + bound.getNorthEast().lat();
+        url += '&ymax=' + bound.getNorthEast().lng();
         xmlhttp.open("GET", url, true);
         xmlhttp.send();
     }
     function clear() {
-        document.getElementById('search_bar').value = "";
-        directionsDisplay.setMap(null);
-        deleteMarkers();
+        document.getElementById('num').value = "";
         document.getElementById("result").innerHTML="";
+        rectangle.setBounds(null);
     }
 
     $('#clearButton').on("click", function() { clear(); });
-    $("#search_bar").on("input", function() { showSearch(true); });
-    $("#num").on("input", function() { showSearch(true); });
-    google.maps.event.addListener(map, 'dragend', function() { showSearch(false); });
-    google.maps.event.addListener(map, 'zoom_changed', function() { showSearch(false); });
+    $("#num").on("input", function() { showSearch(); });
 
 });

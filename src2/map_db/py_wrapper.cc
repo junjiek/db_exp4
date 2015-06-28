@@ -1,7 +1,8 @@
 #include <Python/Python.h>
 #include "db/poi.h"
-#include "db/kit.h"
+#include "db/search.h"
 
+using namespace std;
 PyObject* wrap_ReadJson(PyObject* self, PyObject* args) {
     char* filename;
     if (!PyArg_ParseTuple(args, "s", &filename))
@@ -13,25 +14,22 @@ PyObject* wrap_ReadJson(PyObject* self, PyObject* args) {
 }
 
 PyObject* wrap_Search(PyObject* self, PyObject* args) {
-    double lat;
-    double lng;
-    char* input;
     unsigned num;
-    if (!PyArg_ParseTuple(args, "ddsi", &lat, &lng, &input, &num))
+    double xmin, ymin, xmax, ymax;
+    if (!PyArg_ParseTuple(args, "idddd", &num, &xmin, &ymin, &xmax, &ymax)) {
         return NULL;
-
-    const std::vector<POI>& pois = Search(lat, lng, input, num);
-    PyObject* py_pois = PyList_New(pois.size());
-    for (unsigned index = 0; index < pois.size(); ++index) {
-        const POI& poi = pois.at(index);
-        PyObject* py_poi = PyList_New(4);
-        PyList_SetItem(py_poi, 0, PyString_FromString(poi.name_.data()));
-        PyList_SetItem(py_poi, 1, PyFloat_FromDouble(poi.lat_));
-        PyList_SetItem(py_poi, 2, PyFloat_FromDouble(poi.lng_));
-        PyList_SetItem(py_poi, 3, PyString_FromString(poi.addr_.data()));
-        PyList_SetItem(py_pois, index, py_poi);
     }
-    return py_pois;
+
+    const vector<pair<string, int> >& tags = Search(num, xmin, ymin, xmax, ymax);
+    PyObject* py_tags = PyList_New(tags.size());
+    for (unsigned index = 0; index < tags.size(); ++index) {
+        const pair<string, int>& tag = tags.at(index);
+        PyObject* py_tag = PyList_New(2);
+        PyList_SetItem(py_tag, 0, PyString_FromString(tag.first.data()));
+        PyList_SetItem(py_tag, 1, PyInt_FromLong(tag.second));
+        PyList_SetItem(py_tags, index, py_tag);
+    }
+    return py_tags;
 }
 
 static PyMethodDef methods[] = {

@@ -235,7 +235,7 @@ public:
     StackElement m_stack[MAX_STACK];              ///< Stack as we are doing iteration instead of recursion
     int m_tos;                                    ///< Top Of Stack index
   
-    friend RTree; // Allow hiding of non-public functions while allowing manipulation by logical owner
+    // friend RTree; // Allow hiding of non-public functions while allowing manipulation by logical owner
   };
 
   /// Get 'first' for iteration
@@ -1086,8 +1086,8 @@ typename RTREE_QUAL::Rect RTREE_QUAL::CombineRect(Rect* a_rectA, Rect* a_rectB)
 
   for(int index = 0; index < NUMDIMS; ++index)
   {
-    newRect.m_min[index] = Min(a_rectA->m_min[index], a_rectB->m_min[index]);
-    newRect.m_max[index] = Max(a_rectA->m_max[index], a_rectB->m_max[index]);
+    newRect.m_min[index] = (a_rectA->m_min[index] < a_rectB->m_min[index]) ? a_rectA->m_min[index] : a_rectB->m_min[index];
+    newRect.m_max[index] = (a_rectA->m_max[index] > a_rectB->m_max[index]) ? a_rectA->m_max[index] : a_rectB->m_max[index];
   }
 
   return newRect;

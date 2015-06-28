@@ -8,7 +8,7 @@
 // Read POIs from file in json format.
 bool ReadJson(char* file_name);
 
-std::vector<POI> Search(double lat, double lng, const std::string& input,
-                        unsigned num);
+std::vector<std::pair<std::string, int> >
+    Search(unsigned num, double xmin, double ymin, double xmax, double ymax);
 
 #endif  // _KIT_H_
