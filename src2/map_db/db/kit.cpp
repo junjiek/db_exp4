@@ -45,7 +45,7 @@ bool ReadJson(char* file_name) {
     poi_list.clear();
     trie.Clear();
 
-    cout << "server: Reading json from " << file_name << "..." << endl;
+    cout << "server: Reading json from " << file_name << " ..." << endl;
     while (getline(fin, str)) {
         stringstream stream(str);
         Json::Reader reader;
@@ -61,11 +61,11 @@ bool ReadJson(char* file_name) {
         poi_list.push_back(POI(name, lat, lng, addr));
     }
     fin.close();
-    cout << "server: Finish loading data" << endl;
+    cout << "server: Finish loading data." << endl;
 
     sort(poi_list.begin(), poi_list.end(), poi_compare);
 
-    cout << "server: Building trie..." << endl;
+    cout << "server: Building trie ..." << endl;
     for (unsigned poi_index = 0; poi_index < poi_list.size(); ++poi_index) {
         string& name = poi_list[poi_index].name_;
         vector<string> keywords = GetKeywords(name);
@@ -105,7 +105,7 @@ string cached_input;
 vector<POI> cached_pois;
 
 vector<string> cached_keywords;
-vector<vector<unsigned> > cached_refss;
+vector<vector<unsigned> > cached_refs;
 
 vector<POI> Search(double lat, double lng, const string& input,
                    unsigned num) {
@@ -136,9 +136,9 @@ vector<POI> Search(double lat, double lng, const string& input,
 
         for (int i = (int)cached_keywords.size()-1; i >= (int)index; --i) {
             cached_keywords.pop_back();
-            cached_refss.pop_back();
+            cached_refs.pop_back();
         }
-        if (cached_refss.size() > 0 && cached_refss.back().size() == 0) {
+        if (cached_refs.size() > 0 && cached_refs.back().size() == 0) {
             return cached_pois;
         }
 
@@ -146,18 +146,18 @@ vector<POI> Search(double lat, double lng, const string& input,
             cached_keywords.push_back(keywords[i]);
             const vector<unsigned>* refs = trie.GetRefs(keywords[i]);
             if (refs == NULL) {
-                cached_refss.push_back(vector<unsigned>());
+                cached_refs.push_back(vector<unsigned>());
                 cached_pois = vector<POI>();
                 return cached_pois;
             }
-            if (cached_refss.size() == 0)
-                cached_refss.push_back(*refs);
+            if (cached_refs.size() == 0)
+                cached_refs.push_back(*refs);
             else
-                cached_refss.push_back(IntersectRefs(cached_refss.back(), *refs));
+                cached_refs.push_back(IntersectRefs(cached_refs.back(), *refs));
         }
     }
 
-    const vector<unsigned>& u_refs = cached_refss.back();
+    const vector<unsigned>& u_refs = cached_refs.back();
     cout << "Matched " << u_refs.size() << " entries." << endl;
 
     vector<POI> matched_poi_list;
