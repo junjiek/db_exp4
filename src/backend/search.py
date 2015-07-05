@@ -3,7 +3,7 @@ import json, time
 class searcher:
     def __init__(self):
         self.db = []
-        self.load_data('addrdb.json')
+        self.load_data('address.json')
 
         self.trienodes = []
         self.trienodes.append({})
